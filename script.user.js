@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        DailyCrosswordLinks Filtering
-// @namespace   https://github.com/Inevitabby/DailyCrosswordLinks-Filtering/raw/script.user.js
+// @namespace   https://github.com/Inevitabby/DailyCrosswordLinks-Filtering/raw/refs/heads/main/script.user.js
 // @match       https://dailycrosswordlinks.com/*
 // @grant       none
 // @version     1.0
