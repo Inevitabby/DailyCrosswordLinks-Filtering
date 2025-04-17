@@ -3,9 +3,10 @@
 // @namespace   https://github.com/Inevitabby/DailyCrosswordLinks-Filtering/raw/refs/heads/main/script.user.js
 // @match       https://dailycrosswordlinks.com/*
 // @grant       none
-// @version     1.1
+// @version     1.2
 // @author      Inevitabby
-// @description Hides links from Daily Crossword Links (e.g., subscription-only, appstore only, etc.)
+// @description Filters links from Daily Crossword Links (e.g., subscription-only, appstore only, etc.)
+// @license     Unlicense; https://unlicense.org/
 // ==/UserScript==
 (function () {
   "use strict";
