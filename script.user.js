@@ -3,7 +3,7 @@
 // @namespace   https://github.com/Inevitabby/DailyCrosswordLinks-Filtering/raw/refs/heads/main/script.user.js
 // @match       https://dailycrosswordlinks.com/*
 // @grant       none
-// @version     1.3
+// @version     1.4
 // @author      Inevitabby
 // @description Filters links from Daily Crossword Links (e.g., subscription-only, appstore only, etc.)
 // @license     Unlicense; https://unlicense.org/
@@ -35,7 +35,7 @@
   // Returns if entry requires subscription or purchase
   function hidePaid(elem) {
     const strong = elem.querySelector("strong");
-    return strong && strong.textContent.includes(": ($)");
+    return strong?.textContent?.includes(": ($)");
   }
 
   // Returns if entry requires appstore (exclusively)
@@ -52,7 +52,7 @@
   // Returns if entry is a cryptic
   function hideCryptic(elem) {
     const strong = elem.querySelector("strong");
-    return strong && strong.textContent.includes("Cryptic");
+    return strong?.textContent?.includes("Cryptic");
   }
 
   // Returns if entry lacks wanted filetypes
@@ -86,30 +86,6 @@
     hideFiletype,
   };
 
-  // ====================================
-  // === Entry Modification Functions ===
-  // ====================================
-
-  // Delete an entry
-  function remove(elem) {
-    while (elem) {
-      const next = elem.nextSibling;
-      elem.remove();
-      if (elem.nodeName === "BR") break;
-      elem = next;
-    }
-  }
-
-  // Mark an entry
-  function mark(elem) {
-    while (elem) {
-      const next = elem.nextSibling;
-      if (elem.style) elem.style.opacity = "0.5";
-      if (elem.nodeName === "BR") break;
-      elem = next;
-    }
-  }
-
   // ============================
   // === Iterate over Entries ===
   // ============================
@@ -133,10 +109,20 @@
       });
       if (!matchKey) continue;
       const { action } = CONFIG[matchKey];
-      if (action === "remove") remove(entry);
-      if (action === "mark") mark(entry);
+      modify(entry, action);
     };
   };
+
+  // Delete or mark an entry
+  function modify(elem, action) {
+    while (elem) {
+      const next = elem.nextSibling;
+      if (action === "remove") elem.remove();
+      if (action === "mark") if (elem.style) elem.style.opacity = "0.5";
+      if (elem.nodeName === "BR") break;
+      elem = next;
+    }
+  }
 
   // Returns a post's date
   function getDate(elem) {
