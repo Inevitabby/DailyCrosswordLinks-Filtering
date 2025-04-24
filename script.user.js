@@ -3,13 +3,14 @@
 // @namespace   https://github.com/Inevitabby/DailyCrosswordLinks-Filtering/raw/refs/heads/main/script.user.js
 // @match       https://dailycrosswordlinks.com/*
 // @grant       none
-// @version     1.2
+// @version     1.3
 // @author      Inevitabby
 // @description Filters links from Daily Crossword Links (e.g., subscription-only, appstore only, etc.)
 // @license     Unlicense; https://unlicense.org/
 // ==/UserScript==
 (function () {
   "use strict";
+
   const CONFIG = {
     hidePaid: {
       action: "remove", // valid actions: "remove", "mark", "none"
@@ -22,6 +23,7 @@
     },
     hideFiletype: {
       action: "mark",
+      guessFiletype: true,
       whitelist: [ ".puz" ]
     },
   };
@@ -35,25 +37,47 @@
     const strong = elem.querySelector("strong");
     return strong && strong.textContent.includes(": ($)");
   }
+
   // Returns if entry requires appstore (exclusively)
   function hideApp(elem) {
     const links = elem.querySelectorAll("a");
+    const em = elem.querySelector("em");
+    if (em !== null && em.textContent.includes("Online, phone app only")) return true;
     return links.length > 0 && Array.from(links).every(link =>
       link.href.startsWith("https://play.google.com") ||
       link.href.startsWith("https://apps.apple.com")
     );
   }
+
   // Returns if entry is a cryptic
   function hideCryptic(elem) {
     const strong = elem.querySelector("strong");
     return strong && strong.textContent.includes("Cryptic");
   }
+
   // Returns if entry lacks wanted filetypes
   function hideFiletype(elem) {
+    function check(str) {
+      return !CONFIG.hideFiletype.whitelist.some((ft) => str.includes(ft));
+    }
     const em = elem.querySelector("em");
-    if (em === null) return true;
-    return !CONFIG.hideFiletype.whitelist.some((ft) => em.textContent.includes(ft));
+    // 1. Handle entries with filetype listed
+    if (elem._postDate < new Date("April 21, 2025")) {
+      if (em === null) return true;
+      return check(em.textContent);
+    }
+    // 2. Guess filetype for new entries that lack it
+    if (em?.textContent) return check(em.textContent);
+    if (!CONFIG.hideFiletype.guessFiletype) return false;
+    const publisher = elem.querySelector("a")?.textContent;
+    const entries = Array.from(document.querySelectorAll(SELECTORS.entry))
+      .filter(e => e.querySelector("a")?.textContent?.includes(publisher));
+    for (const entry of entries.reverse()) {
+      const guess = entry.querySelector("em")?.textContent;
+      if (guess?.length > 0) return check(guess);
+    }
   }
+
   // Local function map
   const MAP = {
     hidePaid,
@@ -75,6 +99,7 @@
       elem = next;
     }
   }
+
   // Mark an entry
   function mark(elem) {
     while (elem) {
@@ -89,16 +114,35 @@
   // === Iterate over Entries ===
   // ============================
 
+  // Selectors
+  const SELECTORS = {
+    post: "li.wp-block-post",
+    entry: "span.fetched, span.unfetched",
+    title: "h2.wp-block-post-title a",
+  };
+
   // Scan through all entries
-  const entries = document.querySelectorAll("span.fetched, span.unfetched");
-  entries.forEach((entry) => {
-    const matchKey = Object.keys(CONFIG).find((key) => {
-      return MAP[key](entry);
-    });
-    if (!matchKey) return;
-    const { action } = CONFIG[matchKey];
-    if (action === "remove") remove(entry);
-    if (action === "mark") mark(entry);
-  });
+  const posts = document.querySelectorAll(SELECTORS.post);
+  for (const post of posts) {
+    const date = getDate(post);
+    const entries = post.querySelectorAll(SELECTORS.entry);
+    for (const entry of entries) {
+      entry._postDate = date;
+      const matchKey = Object.keys(CONFIG).find((key) => {
+        return MAP[key](entry);
+      });
+      if (!matchKey) continue;
+      const { action } = CONFIG[matchKey];
+      if (action === "remove") remove(entry);
+      if (action === "mark") mark(entry);
+    };
+  };
+
+  // Returns a post's date
+  function getDate(elem) {
+    return new Date(
+      elem.querySelector(SELECTORS.title)?.textContent
+    );
+  }
 
 })();
